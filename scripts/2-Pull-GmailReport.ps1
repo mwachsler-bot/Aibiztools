@@ -32,14 +32,13 @@ if (-not (Test-Path $reportDir)) { New-Item -ItemType Directory -Path $reportDir
 $cred     = Get-Content $credFile | ConvertFrom-Json
 $clientId = $cred.installed.client_id
 $clientSecret = $cred.installed.client_secret
-$redirectUri  = "urn:ietf:wg:oauth:2.0:oob"
+$redirectUri  = "http://localhost:8080"
 $scopes       = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly"
 
 # ── OAuth: get or refresh token ─────────────────────────────
 function Get-AccessToken {
     if (Test-Path $tokenFile) {
         $token = Get-Content $tokenFile | ConvertFrom-Json
-        # Refresh if we have a refresh token
         if ($token.refresh_token) {
             Write-Host "Refreshing access token..." -ForegroundColor Gray
             $body = @{
@@ -55,7 +54,11 @@ function Get-AccessToken {
         }
     }
 
-    # First-time auth: open browser for consent
+    # Start local listener to catch the redirect
+    $listener = [System.Net.HttpListener]::new()
+    $listener.Prefixes.Add("http://localhost:8080/")
+    $listener.Start()
+
     $authUrl = "https://accounts.google.com/o/oauth2/auth?" + `
                "client_id=$clientId" + `
                "&redirect_uri=$([System.Uri]::EscapeDataString($redirectUri))" + `
@@ -67,9 +70,20 @@ function Get-AccessToken {
     Write-Host ""
     Write-Host "Opening browser for Google sign-in..." -ForegroundColor Yellow
     Start-Process $authUrl
-    Write-Host ""
-    Write-Host "After signing in, Google will show you a code." -ForegroundColor White
-    $code = Read-Host "Paste the code here"
+    Write-Host "Waiting for Google to redirect back..." -ForegroundColor Gray
+
+    $context = $listener.GetContext()
+    $code = [System.Web.HttpUtility]::ParseQueryString($context.Request.Url.Query)["code"]
+
+    # Send a success page to the browser
+    $responseHtml = "<html><body><h2>Done! You can close this tab and return to PowerShell.</h2></body></html>"
+    $buffer = [System.Text.Encoding]::UTF8.GetBytes($responseHtml)
+    $context.Response.ContentLength64 = $buffer.Length
+    $context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
+    $context.Response.OutputStream.Close()
+    $listener.Stop()
+
+    Write-Host "Authorization received." -ForegroundColor Green
 
     $body = @{
         client_id     = $clientId
