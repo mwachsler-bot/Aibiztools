@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank Statement → QuickBooks Desktop | AI Biz Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D0F14;--surface:#141720;--surface2:#1a1e2e;--border:rgba(255,255,255,0.07);
+  --accent:#F0C040;--accent2:#E07A30;--text:#F0EDE6;--muted:#8A8F9E;
+  --green:#4DBF8A;--red:#E05555;--radius:14px
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── HEADER ── */
+.header{padding:1.4rem 2rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:var(--text);text-decoration:none}
+.logo span{color:var(--accent)}
+.back-link{font-size:0.8rem;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:0.4rem;transition:color 0.15s}
+.back-link:hover{color:var(--accent)}
+
+/* ── HERO ── */
+.hero{padding:4rem 1.5rem 2rem;text-align:center;position:relative}
+.hero-glow{position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:500px;height:400px;background:radial-gradient(ellipse,rgba(240,192,64,0.1) 0%,transparent 70%);pointer-events:none}
+.badge{display:inline-flex;align-items:center;gap:0.4rem;background:rgba(77,191,138,0.12);border:1px solid rgba(77,191,138,0.3);color:var(--green);font-size:0.68rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;padding:0.32rem 0.9rem;border-radius:100px;margin-bottom:1.5rem}
+h1{font-family:'Syne',sans-serif;font-size:clamp(1.8rem,5vw,3.2rem);font-weight:800;line-height:1.1;letter-spacing:-0.02em;margin-bottom:1rem}
+h1 span{color:var(--accent)}
+.hero-sub{font-size:0.95rem;color:var(--muted);max-width:520px;margin:0 auto 2.5rem;line-height:1.7;font-weight:300}
+
+/* ── STEPS BAR ── */
+.steps-bar{display:flex;align-items:center;justify-content:center;gap:0;max-width:640px;margin:0 auto 3rem;padding:0 1.5rem}
+.step{display:flex;flex-direction:column;align-items:center;gap:0.35rem;flex:1;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;top:18px;left:calc(50% + 18px);right:calc(-50% + 18px);height:1px;background:var(--border)}
+.step.active:not(:last-child)::after{background:rgba(240,192,64,0.4)}
+.step-dot{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:700;color:var(--muted);transition:all 0.3s;z-index:1}
+.step.active .step-dot{border-color:var(--accent);background:rgba(240,192,64,0.15);color:var(--accent)}
+.step.done .step-dot{border-color:var(--green);background:rgba(77,191,138,0.15);color:var(--green)}
+.step-label{font-size:0.68rem;color:var(--muted);font-weight:500;white-space:nowrap}
+.step.active .step-label{color:var(--accent)}
+.step.done .step-label{color:var(--green)}
+
+/* ── MAIN CONTAINER ── */
+.container{max-width:860px;margin:0 auto;padding:0 1.5rem 6rem}
+
+/* ── PANELS ── */
+.panel{display:none}
+.panel.show{display:block;animation:fadeIn 0.3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── UPLOAD ZONE ── */
+.upload-section{margin-bottom:2rem}
+.section-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:0.4rem}
+.section-sub{font-size:0.82rem;color:var(--muted);margin-bottom:1.2rem;line-height:1.6}
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);position:relative}
+.upload-zone:hover,.upload-zone.drag-over{border-color:rgba(240,192,64,0.5);background:rgba(240,192,64,0.04)}
+.upload-icon{font-size:2.5rem;margin-bottom:0.8rem}
+.upload-text{font-size:0.9rem;color:var(--text);margin-bottom:0.3rem;font-weight:500}
+.upload-hint{font-size:0.78rem;color:var(--muted)}
+.upload-hint span{color:var(--accent)}
+#fileInput{position:absolute;inset:0;opacity:0;cursor:pointer}
+.files-list{margin-top:1rem;display:flex;flex-direction:column;gap:0.5rem}
+.file-item{display:flex;align-items:center;gap:0.8rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.7rem 1rem}
+.file-icon{font-size:1.1rem;flex-shrink:0}
+.file-name{font-size:0.84rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-size{font-size:0.72rem;color:var(--muted);flex-shrink:0}
+.file-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0.2rem;transition:color 0.15s;flex-shrink:0}
+.file-remove:hover{color:var(--red)}
+
+/* ── MAPPING CONFIG ── */
+.mapping-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.2rem}
+.mapping-card h3{font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+@media(max-width:520px){.field-grid{grid-template-columns:1fr}}
+.fg{display:flex;flex-direction:column;gap:0.3rem}
+.fg label{font-size:0.72rem;font-weight:500;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase}
+.fg select,.fg input[type=text],.fg input[type=number]{
+  background:var(--bg);border:1.5px solid var(--border);border-radius:8px;
+  padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:0.84rem;outline:none;transition:border-color 0.2s;width:100%
+}
+.fg select:focus,.fg input:focus{border-color:var(--accent)}
+.fg select option{background:#1a1e2e}
+.hint-text{font-size:0.72rem;color:var(--muted);margin-top:0.2rem}
+
+/* ── FILTER TOGGLES ── */
+.filter-row{display:flex;flex-wrap:wrap;gap:0.6rem;margin-bottom:1.2rem}
+.toggle-chip{display:flex;align-items:center;gap:0.5rem;padding:0.45rem 1rem;border-radius:100px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:0.78rem;font-weight:500;color:var(--muted);transition:all 0.15s;user-select:none}
+.toggle-chip input{display:none}
+.toggle-chip.on{border-color:rgba(240,192,64,0.5);background:rgba(240,192,64,0.08);color:var(--accent)}
+.toggle-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background 0.15s}
+.toggle-chip.on .toggle-dot{background:var(--accent)}
+
+/* ── PREVIEW TABLE ── */
+.preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.8rem}
+.preview-header h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700}
+.count-badge{font-size:0.75rem;font-weight:600;padding:0.25rem 0.7rem;border-radius:100px;background:rgba(77,191,138,0.12);border:1px solid rgba(77,191,138,0.3);color:var(--green)}
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;min-width:540px}
+thead tr{background:var(--surface2)}
+th{padding:0.75rem 1rem;text-align:left;font-family:'Syne',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+td{padding:0.7rem 1rem;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.amount-neg{color:var(--red)}
+.amount-pos{color:var(--green)}
+.type-badge{font-size:0.68rem;font-weight:600;padding:0.18rem 0.55rem;border-radius:100px;letter-spacing:0.04em;text-transform:uppercase}
+.type-check{background:rgba(224,122,48,0.12);border:1px solid rgba(224,122,48,0.3);color:var(--accent2)}
+.type-withdrawal{background:rgba(224,85,85,0.12);border:1px solid rgba(224,85,85,0.3);color:var(--red)}
+.type-deposit{background:rgba(77,191,138,0.12);border:1px solid rgba(77,191,138,0.3);color:var(--green)}
+.type-other{background:rgba(138,143,158,0.12);border:1px solid rgba(138,143,158,0.3);color:var(--muted)}
+.row-exclude{opacity:0.35}
+.row-exclude td{text-decoration:line-through}
+.exclude-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;padding:0.15rem 0.45rem;font-size:0.7rem;transition:all 0.15s}
+.exclude-btn:hover{border-color:var(--red);color:var(--red)}
+.exclude-btn.excluded{border-color:rgba(77,191,138,0.4);color:var(--green)}
+
+/* ── SUMMARY STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.8rem;margin-bottom:2rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem 1.4rem}
+.stat-label{font-size:0.7rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem}
+.stat-value{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800}
+.stat-value.red{color:var(--red)}
+.stat-value.green{color:var(--green)}
+.stat-value.gold{color:var(--accent)}
+
+/* ── QB CONFIG ── */
+.qb-section{margin-bottom:2rem}
+.info-box{background:rgba(240,192,64,0.06);border:1px solid rgba(240,192,64,0.2);border-radius:10px;padding:1rem 1.2rem;font-size:0.82rem;line-height:1.6;color:var(--muted);margin-bottom:1.2rem}
+.info-box strong{color:var(--accent)}
+
+/* ── BUTTONS ── */
+.btn-row{display:flex;gap:0.8rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:0.5rem;border:none;border-radius:10px;padding:0.85rem 1.6rem;font-family:'Syne',sans-serif;font-size:0.88rem;font-weight:700;cursor:pointer;transition:all 0.18s}
+.btn-primary{background:var(--accent);color:#0D0F14}
+.btn-primary:hover{background:#f5ce60;transform:translateY(-1px)}
+.btn-primary:disabled{background:#555;color:#888;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-success{background:rgba(77,191,138,0.15);color:var(--green);border:1.5px solid rgba(77,191,138,0.4)}
+.btn-success:hover{background:rgba(77,191,138,0.25)}
+
+/* ── SUCCESS ── */
+.success-hero{text-align:center;padding:3rem 1rem}
+.success-icon{font-size:4rem;margin-bottom:1.2rem}
+.success-title{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;margin-bottom:0.6rem}
+.success-sub{color:var(--muted);font-size:0.9rem;line-height:1.7;max-width:460px;margin:0 auto 2rem}
+.iif-preview{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;font-family:'Courier New',monospace;font-size:0.72rem;color:var(--green);overflow-x:auto;margin-bottom:1.5rem;max-height:220px;overflow-y:auto;line-height:1.5;white-space:pre}
+.import-steps{text-align:left;max-width:500px;margin:0 auto 2rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem 1.6rem}
+.import-steps h4{font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:700;margin-bottom:1rem}
+.import-steps ol{padding-left:1.4rem;display:flex;flex-direction:column;gap:0.5rem}
+.import-steps li{font-size:0.83rem;color:var(--muted);line-height:1.5}
+.import-steps li strong{color:var(--text)}
+
+/* ── PROGRESS ── */
+.progress-bar-wrap{background:var(--surface2);border-radius:100px;height:4px;margin:1rem 0;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:100px;transition:width 0.4s ease;width:0%}
+
+/* ── LOADING ── */
+.loading-spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.15);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1.4rem;font-size:0.84rem;display:flex;align-items:center;gap:0.7rem;z-index:9999;opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;max-width:320px}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{border-color:rgba(77,191,138,0.4);color:var(--green)}
+.toast.error{border-color:rgba(224,85,85,0.4);color:var(--red)}
+
+/* ── EDITABLE CELLS ── */
+td.editable{cursor:text}
+td.editable:hover{background:rgba(240,192,64,0.05)}
+td.editable input{background:transparent;border:none;border-bottom:1px solid var(--accent);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.82rem;outline:none;width:100%}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <a href="index.html" class="logo">AI<span>Biz</span>Tools</a>
+  <a href="index.html" class="back-link">← Back to Tools</a>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div>
+  <div class="badge">✦ QuickBooks Desktop Integration</div>
+  <h1>Bank Statement<br><span>→ QuickBooks</span></h1>
+  <p class="hero-sub">Upload your CSV or PDF bank statement, review parsed checks &amp; withdrawals, then download an IIF file ready to import directly into QuickBooks Desktop.</p>
+</div>
+
+<!-- STEPS BAR -->
+<div class="steps-bar">
+  <div class="step active" id="step1">
+    <div class="step-dot">1</div>
+    <div class="step-label">Upload</div>
+  </div>
+  <div class="step" id="step2">
+    <div class="step-dot">2</div>
+    <div class="step-label">Configure</div>
+  </div>
+  <div class="step" id="step3">
+    <div class="step-dot">3</div>
+    <div class="step-label">Review</div>
+  </div>
+  <div class="step" id="step4">
+    <div class="step-dot">4</div>
+    <div class="step-label">Export</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ═══ PANEL 1: UPLOAD ═══ -->
+  <div class="panel show" id="panel1">
+    <div class="upload-section">
+      <div class="section-title">Upload Bank Statement</div>
+      <div class="section-sub">Supports CSV/Excel exports from most major banks, and PDF statements. For PDFs, text-layer extraction is used — scanned image PDFs may need OCR preprocessing.</div>
+
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept=".csv,.txt,.pdf" multiple>
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">Drop your bank statement here</div>
+        <div class="upload-hint">CSV, TXT, or PDF &nbsp;·&nbsp; <span>Click to browse</span></div>
+      </div>
+      <div class="files-list" id="filesList"></div>
+    </div>
+
+    <!-- CSV FORMAT HINT -->
+    <div class="mapping-card" id="csvHint" style="display:none">
+      <h3>📋 CSV Column Mapping</h3>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
+        Tell us which columns contain each piece of data. Column names are auto-detected — adjust if your bank uses different headers.
+      </p>
+      <div class="field-grid">
+        <div class="fg">
+          <label>Date Column</label>
+          <select id="colDate"></select>
+        </div>
+        <div class="fg">
+          <label>Description / Memo Column</label>
+          <select id="colDesc"></select>
+        </div>
+        <div class="fg">
+          <label>Amount Column</label>
+          <select id="colAmount"></select>
+          <span class="hint-text">Use this if debits &amp; credits are in a single column</span>
+        </div>
+        <div class="fg">
+          <label>Debit Column (optional)</label>
+          <select id="colDebit"><option value="">-- Not separate --</option></select>
+        </div>
+        <div class="fg">
+          <label>Credit Column (optional)</label>
+          <select id="colCredit"><option value="">-- Not separate --</option></select>
+        </div>
+        <div class="fg">
+          <label>Check # Column (optional)</label>
+          <select id="colCheck"><option value="">-- Not present --</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:1.5rem">
+      <button class="btn btn-primary" id="btnParse" disabled>
+        Parse Statement →
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL 2: CONFIGURE ═══ -->
+  <div class="panel" id="panel2">
+    <div class="section-title" style="margin-bottom:0.4rem">Filter Transactions</div>
+    <div class="section-sub">Choose which transaction types to include in the QuickBooks export.</div>
+
+    <div class="filter-row">
+      <label class="toggle-chip on" id="chip-checks">
+        <input type="checkbox" checked> <div class="toggle-dot"></div> Checks
+      </label>
+      <label class="toggle-chip on" id="chip-withdrawals">
+        <input type="checkbox" checked> <div class="toggle-dot"></div> Withdrawals / Debits
+      </label>
+      <label class="toggle-chip" id="chip-deposits">
+        <input type="checkbox"> <div class="toggle-dot"></div> Deposits / Credits
+      </label>
+    </div>
+
+    <!-- QB SETTINGS -->
+    <div class="mapping-card">
+      <h3>🏦 QuickBooks Account Settings</h3>
+      <div class="field-grid">
+        <div class="fg">
+          <label>Bank Account Name (in QB)</label>
+          <input type="text" id="qbAccount" placeholder="e.g. Business Checking" value="Business Checking">
+        </div>
+        <div class="fg">
+          <label>Default Expense Account</label>
+          <input type="text" id="qbExpense" placeholder="e.g. Bank Charges" value="Uncategorized Expense">
+        </div>
+        <div class="fg">
+          <label>Currency</label>
+          <select id="qbCurrency">
+            <option value="USD">USD — US Dollar</option>
+            <option value="CAD">CAD — Canadian Dollar</option>
+            <option value="GBP">GBP — British Pound</option>
+            <option value="EUR">EUR — Euro</option>
+            <option value="AUD">AUD — Australian Dollar</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Date Format in QB</label>
+          <select id="qbDateFmt">
+            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Transaction Class (optional)</label>
+          <input type="text" id="qbClass" placeholder="Leave blank if not using classes">
+        </div>
+        <div class="fg">
+          <label>Payee Name for Unknown</label>
+          <input type="text" id="qbPayee" placeholder="e.g. Various" value="Various">
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goToPanel(1)">← Back</button>
+      <button class="btn btn-primary" id="btnReview">Review Transactions →</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL 3: REVIEW ═══ -->
+  <div class="panel" id="panel3">
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="preview-header">
+      <h3>Transactions to Export</h3>
+      <span class="count-badge" id="countBadge">0 items</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Check #</th>
+            <th>Amount</th>
+            <th>QB Account</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="txTable"></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:0.8rem;font-size:0.75rem;color:var(--muted)">
+      Click any cell to edit before exporting. Use the × button to exclude a row.
+    </div>
+
+    <div class="btn-row" style="margin-top:1.5rem">
+      <button class="btn btn-secondary" onclick="goToPanel(2)">← Back</button>
+      <button class="btn btn-primary" id="btnExport">Generate IIF File →</button>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL 4: EXPORT ═══ -->
+  <div class="panel" id="panel4">
+    <div class="success-hero">
+      <div class="success-icon">✅</div>
+      <div class="success-title">IIF File Ready</div>
+      <p class="success-sub" id="successSub">Your transactions have been formatted as a QuickBooks IIF file and downloaded automatically.</p>
+
+      <pre class="iif-preview" id="iifPreview"></pre>
+
+      <div class="import-steps">
+        <h4>📥 How to Import into QuickBooks Desktop</h4>
+        <ol>
+          <li>Open <strong>QuickBooks Desktop</strong></li>
+          <li>Go to <strong>File → Utilities → Import → IIF Files…</strong></li>
+          <li>Browse to the downloaded <strong>.iif</strong> file and click <strong>Open</strong></li>
+          <li>QuickBooks will confirm the import — click <strong>OK</strong></li>
+          <li>Find the transactions in your <strong>Chart of Accounts → Bank register</strong></li>
+          <li>Review and assign final categories as needed</li>
+        </ol>
+      </div>
+
+      <div class="btn-row" style="justify-content:center">
+        <button class="btn btn-success" id="btnDownloadAgain">⬇ Download IIF Again</button>
+        <button class="btn btn-secondary" onclick="resetAll()">↺ Process Another Statement</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+const state = {
+  files: [],
+  rawRows: [],       // parsed rows from CSV/PDF
+  headers: [],       // CSV column headers
+  transactions: [],  // processed transaction objects
+  iifContent: '',
+};
+
+// ═══════════════════════════════════════════════════════
+//  STEP NAVIGATION
+// ═══════════════════════════════════════════════════════
+function goToPanel(n) {
+  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('show', i+1===n));
+  document.querySelectorAll('.step').forEach((s,i) => {
+    s.classList.toggle('active', i+1===n);
+    s.classList.toggle('done', i+1<n);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════════════
+//  FILE UPLOAD
+// ═══════════════════════════════════════════════════════
+const uploadZone = document.getElementById('uploadZone');
+const fileInput  = document.getElementById('fileInput');
+const filesList  = document.getElementById('filesList');
+const btnParse   = document.getElementById('btnParse');
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  handleFiles([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change', () => handleFiles([...fileInput.files]));
+
+function handleFiles(files) {
+  files.forEach(f => {
+    if (!state.files.find(x => x.name === f.name)) state.files.push(f);
+  });
+  renderFilesList();
+}
+
+function renderFilesList() {
+  filesList.innerHTML = state.files.map((f,i) => `
+    <div class="file-item">
+      <span class="file-icon">${f.name.endsWith('.pdf') ? '📕' : '📊'}</span>
+      <span class="file-name">${f.name}</span>
+      <span class="file-size">${(f.size/1024).toFixed(0)} KB</span>
+      <button class="file-remove" onclick="removeFile(${i})">✕</button>
+    </div>
+  `).join('');
+  btnParse.disabled = state.files.length === 0;
+}
+
+function removeFile(i) {
+  state.files.splice(i,1);
+  renderFilesList();
+  if (state.files.length === 0) {
+    document.getElementById('csvHint').style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  CSV PARSING
+// ═══════════════════════════════════════════════════════
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return { headers: [], rows: [] };
+
+  const headers = splitCSVLine(lines[0]);
+  const rows = lines.slice(1).map(l => {
+    const cols = splitCSVLine(l);
+    const row = {};
+    headers.forEach((h,i) => row[h] = (cols[i] || '').trim());
+    return row;
+  }).filter(r => Object.values(r).some(v => v));
+
+  return { headers, rows };
+}
+
+function splitCSVLine(line) {
+  const result = [];
+  let cur = '', inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQuote = !inQuote; }
+    else if (c === ',' && !inQuote) { result.push(cur.trim()); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function autoDetectColumns(headers) {
+  const lc = headers.map(h => h.toLowerCase());
+  const find = (...terms) => {
+    for (const t of terms) {
+      const i = lc.findIndex(h => h.includes(t));
+      if (i !== -1) return headers[i];
+    }
+    return headers[0];
+  };
+  return {
+    date:   find('date','time','posted'),
+    desc:   find('desc','memo','narr','particular','detail','ref','transaction'),
+    amount: find('amount','amt','value','sum'),
+    debit:  find('debit','withdrawal','out','charge','dr'),
+    credit: find('credit','deposit','in','cr'),
+    check:  find('check','cheque','chk','number','no.'),
+  };
+}
+
+function populateSelects(headers) {
+  const ids = ['colDate','colDesc','colAmount','colDebit','colCredit','colCheck'];
+  const extras = {'colDebit':'-- Not separate --','colCredit':'-- Not separate --','colCheck':'-- Not present --'};
+  ids.forEach(id => {
+    const sel = document.getElementById(id);
+    const extra = extras[id] || '';
+    sel.innerHTML = (extra ? `<option value="">${extra}</option>` : '') +
+      headers.map(h => `<option value="${h}">${h}</option>`).join('');
+  });
+
+  const auto = autoDetectColumns(headers);
+  const set = (id, val) => { const s = document.getElementById(id); if (val) s.value = val; };
+  set('colDate', auto.date);
+  set('colDesc', auto.desc);
+  set('colAmount', auto.amount);
+  set('colDebit', auto.debit);
+  set('colCredit', auto.credit);
+  set('colCheck', auto.check);
+}
+
+// ═══════════════════════════════════════════════════════
+//  PDF TEXT EXTRACTION (simple approach)
+// ═══════════════════════════════════════════════════════
+async function extractPDFText(file) {
+  // Load pdf.js from CDN lazily
+  if (!window.pdfjsLib) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  let text = '';
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items.map(i => i.str);
+    text += items.join(' ') + '\n';
+  }
+  return text;
+}
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  PARSE PDF TEXT INTO ROWS
+// ═══════════════════════════════════════════════════════
+function parsePDFTextToRows(text) {
+  // Match lines with a date-like pattern followed by text and a dollar amount
+  // e.g.  "01/15/2024  CHECK 1234  PAYEE NAME  -1,234.56"
+  const dateRe = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
+  const amtRe  = /(-?\$?[\d,]+\.\d{2})/g;
+  const lines  = text.split('\n');
+  const rows   = [];
+
+  for (const line of lines) {
+    const dateMatch = line.match(dateRe);
+    if (!dateMatch) continue;
+    const amounts = [...line.matchAll(/-?\$?[\d,]+\.\d{2}/g)].map(m => m[0]);
+    if (!amounts.length) continue;
+
+    const date   = dateMatch[1];
+    const amount = amounts[amounts.length - 1].replace(/\$/, '');
+    const desc   = line
+      .replace(dateRe, '')
+      .replace(/-?\$?[\d,]+\.\d{2}/g, '')
+      .replace(/\s+/g, ' ').trim();
+
+    const checkMatch = desc.match(/check\s*#?\s*(\d+)/i) || desc.match(/chk\s*#?\s*(\d+)/i);
+    rows.push({
+      date, description: desc,
+      amount,
+      check_num: checkMatch ? checkMatch[1] : '',
+    });
+  }
+  return rows;
+}
+
+// ═══════════════════════════════════════════════════════
+//  PARSE BUTTON
+// ═══════════════════════════════════════════════════════
+btnParse.addEventListener('click', async () => {
+  btnParse.innerHTML = '<span class="loading-spinner"></span> Parsing…';
+  btnParse.disabled = true;
+
+  try {
+    state.rawRows = [];
+    state.headers = [];
+
+    for (const file of state.files) {
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        const text = await extractPDFText(file);
+        const rows = parsePDFTextToRows(text);
+        if (!state.headers.length) state.headers = ['date','description','amount','check_num'];
+        state.rawRows.push(...rows);
+      } else {
+        const text = await file.text();
+        const {headers, rows} = parseCSV(text);
+        if (!state.headers.length) state.headers = headers;
+        state.rawRows.push(...rows);
+      }
+    }
+
+    if (!state.rawRows.length) { showToast('No parseable rows found in the file.', 'error'); return; }
+
+    const hasPDF = state.files.some(f => f.name.toLowerCase().endsWith('.pdf'));
+    const csvHint = document.getElementById('csvHint');
+    if (!hasPDF && state.headers.length) {
+      csvHint.style.display = 'block';
+      populateSelects(state.headers);
+    } else {
+      csvHint.style.display = 'none';
+    }
+
+    showToast(`Parsed ${state.rawRows.length} rows successfully.`, 'success');
+    goToPanel(2);
+  } catch(e) {
+    console.error(e);
+    showToast('Error parsing file: ' + e.message, 'error');
+  } finally {
+    btnParse.innerHTML = 'Parse Statement →';
+    btnParse.disabled = false;
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+//  FILTER TOGGLES
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll('.toggle-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.classList.toggle('on');
+    chip.querySelector('input').checked = chip.classList.contains('on');
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  BUILD TRANSACTIONS
+// ═══════════════════════════════════════════════════════
+document.getElementById('btnReview').addEventListener('click', () => {
+  buildTransactions();
+  renderReview();
+  goToPanel(3);
+});
+
+function getColVal(row, colId, fallback='') {
+  const sel = document.getElementById(colId);
+  if (!sel || !sel.value) return fallback;
+  return (row[sel.value] || '').toString().trim();
+}
+
+function parseAmount(str) {
+  if (!str) return 0;
+  const n = parseFloat(str.replace(/[$,\s]/g,''));
+  return isNaN(n) ? 0 : n;
+}
+
+function classifyType(row, amount, checkNum) {
+  const desc = (row.description || row[Object.keys(row)[1]] || '').toLowerCase();
+  if (checkNum) return 'check';
+  if (amount < 0) {
+    if (/check|chk|cheque/i.test(desc)) return 'check';
+    return 'withdrawal';
+  }
+  if (amount > 0) return 'deposit';
+  return 'other';
+}
+
+function buildTransactions() {
+  const hasPDF = state.files.some(f => f.name.toLowerCase().endsWith('.pdf'));
+  const inclChecks = document.getElementById('chip-checks').classList.contains('on');
+  const inclWith   = document.getElementById('chip-withdrawals').classList.contains('on');
+  const inclDep    = document.getElementById('chip-deposits').classList.contains('on');
+
+  state.transactions = state.rawRows.map((row, idx) => {
+    let date, desc, amount, checkNum;
+
+    if (hasPDF) {
+      date     = row.date || '';
+      desc     = row.description || '';
+      amount   = parseAmount(row.amount);
+      checkNum = row.check_num || '';
+    } else {
+      date     = getColVal(row, 'colDate');
+      desc     = getColVal(row, 'colDesc');
+      const debitCol  = document.getElementById('colDebit').value;
+      const creditCol = document.getElementById('colCredit').value;
+      if (debitCol && creditCol) {
+        const deb = parseAmount(row[debitCol] || '');
+        const crd = parseAmount(row[creditCol] || '');
+        amount = crd > 0 ? crd : -Math.abs(deb);
+      } else {
+        amount = parseAmount(getColVal(row, 'colAmount'));
+      }
+      checkNum = getColVal(row, 'colCheck');
+    }
+
+    const type = classifyType({description:desc}, amount, checkNum);
+
+    return {
+      id: idx,
+      date,
+      desc,
+      amount,
+      checkNum,
+      type,
+      qbAccount: document.getElementById('qbExpense').value || 'Uncategorized Expense',
+      excluded: false,
+    };
+  }).filter(tx => {
+    if (tx.type === 'check'      && !inclChecks) return false;
+    if (tx.type === 'withdrawal' && !inclWith)   return false;
+    if (tx.type === 'deposit'    && !inclDep)    return false;
+    if (tx.type === 'other') return false;
+    return true;
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  REVIEW TABLE
+// ═══════════════════════════════════════════════════════
+function renderReview() {
+  const tbody = document.getElementById('txTable');
+  const visible = state.transactions.filter(tx => !tx.excluded);
+
+  tbody.innerHTML = state.transactions.map(tx => `
+    <tr class="${tx.excluded ? 'row-exclude' : ''}" id="row-${tx.id}">
+      <td class="editable" data-field="date" data-id="${tx.id}">${tx.date}</td>
+      <td class="editable" data-field="desc" data-id="${tx.id}" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${tx.desc}">${tx.desc}</td>
+      <td><span class="type-badge type-${tx.type}">${tx.type}</span></td>
+      <td class="editable" data-field="checkNum" data-id="${tx.id}">${tx.checkNum || '—'}</td>
+      <td class="${tx.amount < 0 ? 'amount-neg' : 'amount-pos'}" data-id="${tx.id}" data-field="amount">${fmtAmt(tx.amount)}</td>
+      <td class="editable" data-field="qbAccount" data-id="${tx.id}">${tx.qbAccount}</td>
+      <td><button class="exclude-btn ${tx.excluded ? 'excluded' : ''}" onclick="toggleExclude(${tx.id})" title="${tx.excluded ? 'Re-include' : 'Exclude'}">${tx.excluded ? '↩' : '×'}</button></td>
+    </tr>
+  `).join('');
+
+  // Stats
+  const checks = visible.filter(t => t.type==='check');
+  const withs  = visible.filter(t => t.type==='withdrawal');
+  const deps   = visible.filter(t => t.type==='deposit');
+  const totalOut = visible.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0);
+  const totalIn  = visible.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Transactions</div><div class="stat-value gold">${visible.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Checks</div><div class="stat-value gold">${checks.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Withdrawals</div><div class="stat-value gold">${withs.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Debits</div><div class="stat-value red">${fmtAmt(totalOut)}</div></div>
+    ${deps.length ? `<div class="stat-card"><div class="stat-label">Total Credits</div><div class="stat-value green">${fmtAmt(totalIn)}</div></div>` : ''}
+  `;
+
+  document.getElementById('countBadge').textContent = `${visible.length} items`;
+
+  // Inline editing
+  tbody.querySelectorAll('td.editable').forEach(td => {
+    td.addEventListener('dblclick', () => startEdit(td));
+  });
+}
+
+function fmtAmt(n) {
+  return (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function startEdit(td) {
+  if (td.querySelector('input')) return;
+  const val = td.textContent === '—' ? '' : td.textContent;
+  td.innerHTML = `<input type="text" value="${val}" style="width:100%">`;
+  const inp = td.querySelector('input');
+  inp.focus(); inp.select();
+  inp.addEventListener('blur', () => commitEdit(td, inp.value));
+  inp.addEventListener('keydown', e => { if (e.key==='Enter') inp.blur(); if (e.key==='Escape') { td.textContent = val; } });
+}
+
+function commitEdit(td, val) {
+  const id    = parseInt(td.dataset.id);
+  const field = td.dataset.field;
+  const tx    = state.transactions.find(t => t.id===id);
+  if (!tx) return;
+  if (field === 'amount') {
+    tx.amount = parseAmount(val);
+    td.textContent = fmtAmt(tx.amount);
+    td.className = tx.amount < 0 ? 'editable amount-neg' : 'editable amount-pos';
+  } else {
+    tx[field] = val;
+    td.textContent = val || '—';
+  }
+}
+
+function toggleExclude(id) {
+  const tx = state.transactions.find(t => t.id===id);
+  if (!tx) return;
+  tx.excluded = !tx.excluded;
+  renderReview();
+}
+
+// ═══════════════════════════════════════════════════════
+//  IIF GENERATION
+// ═══════════════════════════════════════════════════════
+document.getElementById('btnExport').addEventListener('click', () => {
+  generateAndDownloadIIF();
+});
+
+document.getElementById('btnDownloadAgain').addEventListener('click', () => {
+  if (state.iifContent) downloadFile(state.iifContent, 'bank-transactions.iif', 'text/plain');
+});
+
+function formatIIFDate(raw) {
+  // Try to parse date and re-format as MM/DD/YYYY (QB Desktop default)
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (!isNaN(d)) {
+    return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+  }
+  // Already-formatted — return as-is
+  return raw;
+}
+
+function generateIIF() {
+  const acct    = document.getElementById('qbAccount').value || 'Business Checking';
+  const expense = document.getElementById('qbExpense').value || 'Uncategorized Expense';
+  const cls     = document.getElementById('qbClass').value   || '';
+  const payee   = document.getElementById('qbPayee').value   || 'Various';
+  const visible = state.transactions.filter(t => !t.excluded);
+
+  let iif = '';
+  // Account headers (ensure accounts exist in QB)
+  iif += `!ACCNT\tNAME\tACCNTTYPE\n`;
+  iif += `ACCNT\t${acct}\tBANK\n`;
+  iif += `ACCNT\t${expense}\tEXP\n`;
+  iif += `\n`;
+
+  // Transaction headers
+  iif += `!TRNS\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tDOCNUM\tMEMO\tCLEAR\n`;
+  iif += `!SPL\tTRNSTYPE\tDATE\tACCNT\tNAME\tAMOUNT\tDOCNUM\tMEMO\tCLEAR\n`;
+  iif += `!ENDTRNS\n`;
+
+  for (const tx of visible) {
+    const date    = formatIIFDate(tx.date);
+    const amount  = tx.amount.toFixed(2);
+    const negAmt  = (-tx.amount).toFixed(2);
+    const docnum  = tx.checkNum || '';
+    const memo    = tx.desc.replace(/\t/g,' ');
+    const type    = tx.type === 'check' ? 'CHECK' : (tx.amount >= 0 ? 'DEPOSIT' : 'EXPENSE');
+    const txAccnt = tx.qbAccount || expense;
+
+    iif += `TRNS\t${type}\t${date}\t${acct}\t${payee}\t${amount}\t${docnum}\t${memo}\tN\n`;
+    iif += `SPL\t${type}\t${date}\t${txAccnt}\t${payee}\t${negAmt}\t${docnum}\t${memo}\tN\n`;
+    iif += `ENDTRNS\n`;
+  }
+
+  return iif;
+}
+
+function generateAndDownloadIIF() {
+  const visible = state.transactions.filter(t => !t.excluded);
+  if (!visible.length) { showToast('No transactions to export.', 'error'); return; }
+
+  state.iifContent = generateIIF();
+
+  // Preview first 40 lines
+  const lines = state.iifContent.split('\n');
+  document.getElementById('iifPreview').textContent = lines.slice(0, 40).join('\n') + (lines.length > 40 ? '\n...' : '');
+  document.getElementById('successSub').textContent =
+    `${visible.length} transaction${visible.length!==1?'s':''} exported. The IIF file has been downloaded — import it into QuickBooks Desktop using the steps below.`;
+
+  downloadFile(state.iifContent, 'bank-transactions.iif', 'text/plain');
+  goToPanel(4);
+}
+
+function downloadFile(content, filename, mime) {
+  const blob = new Blob([content], {type: mime});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════════
+//  RESET
+// ═══════════════════════════════════════════════════════
+function resetAll() {
+  state.files = []; state.rawRows = []; state.headers = [];
+  state.transactions = []; state.iifContent = '';
+  filesList.innerHTML = '';
+  btnParse.disabled = true;
+  document.getElementById('csvHint').style.display = 'none';
+  goToPanel(1);
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type==='success'?'✓ ':'✕ ') + msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
