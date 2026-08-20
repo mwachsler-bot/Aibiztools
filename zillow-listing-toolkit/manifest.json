@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Listing Toolkit",
+  "short_name": "Listing Toolkit",
+  "version": "1.0.0",
+  "description": "Download every listing photo in full resolution, in gallery order, with one click. Starts with Zillow, built to grow to other listing sites.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "downloads",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://www.zillow.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.zillow.com/homedetails/*"],
+      "js": [
+        "utils.js",
+        "sites/base-site.js",
+        "sites/registry.js",
+        "sites/zillow.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["injected.js"],
+      "matches": ["https://www.zillow.com/*"]
+    }
+  ],
+  "minimum_chrome_version": "110"
+}

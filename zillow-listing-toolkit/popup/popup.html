@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Listing Toolkit</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="header">
+      <img src="../icons/icon32.png" alt="" class="logo" />
+      <div>
+        <h1>Listing Toolkit</h1>
+        <p class="subtitle" id="subtitle">Checking this page&hellip;</p>
+      </div>
+    </header>
+
+    <main>
+      <!-- Unsupported-page state -->
+      <section id="unsupported" class="panel hidden">
+        <p class="muted">
+          This isn&rsquo;t a Zillow listing page. Open a property page like
+          <code>zillow.com/homedetails/&hellip;</code> and reopen the extension.
+        </p>
+      </section>
+
+      <!-- Idle state: single big CTA -->
+      <section id="idle" class="panel hidden">
+        <button id="scanBtn" class="btn btn-primary btn-large">Download Listing Photos</button>
+        <p class="muted small">Finds every photo, dedupes sizes, and lets you review before downloading.</p>
+      </section>
+
+      <!-- Scanning state -->
+      <section id="scanning" class="panel hidden">
+        <div class="spinner"></div>
+        <p>Loading photos&hellip;</p>
+      </section>
+
+      <!-- Preview / selection state -->
+      <section id="preview" class="panel hidden">
+        <div class="preview-toolbar">
+          <span id="foundCount" class="muted small"></span>
+          <span class="spacer"></span>
+          <button id="selectAllBtn" class="link-btn">Select all</button>
+          <button id="selectNoneBtn" class="link-btn">Select none</button>
+        </div>
+        <div id="photoGrid" class="photo-grid"></div>
+        <div class="preview-actions">
+          <button id="downloadSelectedBtn" class="btn btn-secondary">Download Selected</button>
+          <button id="downloadAllBtn" class="btn btn-primary">Download All</button>
+        </div>
+      </section>
+
+      <!-- Download progress state -->
+      <section id="progress" class="panel hidden">
+        <p id="progressLabel">Downloaded 0 / 0</p>
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <p id="progressStatus" class="muted small"></p>
+        <ul id="errorList" class="error-list hidden"></ul>
+        <button id="doneBtn" class="btn btn-secondary hidden">Close</button>
+      </section>
+
+      <p id="globalError" class="error-text hidden"></p>
+    </main>
+
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>
